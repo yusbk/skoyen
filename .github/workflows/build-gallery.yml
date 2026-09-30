@@ -11,7 +11,6 @@ permissions:
   contents: write
 
 jobs:
-
   build:
 
     runs-on: ubuntu-latest
@@ -28,85 +27,48 @@ jobs:
 
       - name: Generate thumbnails
         run: |
-
           mkdir -p thumbs
 
           find photos -type f \
-            \( \
-            -iname "*.jpg" -o \
-            -iname "*.jpeg" -o \
-            -iname "*.png" -o \
-            -iname "*.webp" \
-            \) | while read img
-
+            \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) \
+            | while read img
           do
-
             filename=$(basename "$img")
             base="${filename%.*}"
 
             convert "$img" \
- *            -auto-orient \
-       *      -strip \
-              -resi*e '400x400>' \
-              -qual*ty 75 \
-              "thumbs/${ba*e}.webp"
-
+              -auto-orient \
+              -strip \
+              -resize '400x400>' \
+              -quality 75 \
+              "thumbs/${base}.webp"
           done
 
-      - name: Remove old thumbnails
-        run: |
-
-          for thumb in thumbs/*.webp
-          do
-
-            [ -e "$thumb" ] || continue
-
-            base=$(basename "$thumb" .webp)
-
-            found=false
-
-            for ext in jpg jpeg png webp JPG JPEG PNG WEBP
-            do
-
-              if [ -f "photos/${base}.${ext}" ]
-              then
-                found=true
-                break
-              fi
-
-            done
-
-            if [ "$found" = false ]
-            then
-              rm "$thumb"
-            fi
-
-          done
+          echo "Generated thumbnails:"
+          ls -la thumbs
 
       - name: Create photos.json
         run: |
-
           find photos -type f \
-            \( \
-            -iname "*.jpg" -o \
-            -iname "*.jpeg" -o \
-            -iname "*.png" -o \
-            -iname "*.webp" \
-            \) \
+            \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) \
             | sed 's#photos/##' \
             | sort -r \
             | jq -R -s -c 'split("\n")[:-1]' \
             > photos.json
 
+          echo "photos.json:"
+          cat photos.json
+
       - name: Commit updates
         run: |
-
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add thumbs photos.json
 
-          git diff --cached --quiet || \
-          git commit -m "Update gallery"
-
-          git push
+          if ! git diff --cached --quiet; then
+            git commit -m "Update gallery"
+            git push
+          else
+            echo "Nothing to commit."
+          fi

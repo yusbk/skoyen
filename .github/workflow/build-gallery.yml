@@ -1,33 +1,112 @@
-name: Build Photo Index
+name: Build Photo Gallery
 
 on:
   push:
-    paths:
-      - 'photos/**'
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
+  build:
+
+    runs-on: ubuntu-latest
 
     steps:
 
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Generate photos.json
+      - name: Install tools
         run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick jq
+
+      - name: Generate thumbnails
+        run: |
+
+          mkdir -p thumbs
+
           find photos -type f \
-          \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) \
-          | sed 's#photos/##' \
-          | jq -R -s -c 'split("\n")[:-1]' \
-          > photos.json
+            \( \
+            -iname "*.jpg" -o \
+            -iname "*.jpeg" -o \
+            -iname "*.png" -o \
+            -iname "*.webp" \
+            \) | while read img
 
-      - name: Commit changes
+          do
+
+            filename=$(basename "$img")
+            base="${filename%.*}"
+
+            convert "$img" \
+ *            -auto-orient \
+       *      -strip \
+              -resi*e '400x400>' \
+              -qual*ty 75 \
+              "thumbs/${ba*e}.webp"
+
+          done
+
+      - name: Remove old thumbnails
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add photos.json
-          git diff --staged --quiet || git commit -m "Update gallery"
+
+          for thumb in thumbs/*.webp
+          do
+
+            [ -e "$thumb" ] || continue
+
+            base=$(basename "$thumb" .webp)
+
+            found=false
+
+            for ext in jpg jpeg png webp JPG JPEG PNG WEBP
+            do
+
+              if [ -f "photos/${base}.${ext}" ]
+              then
+                found=true
+                break
+              fi
+
+            done
+
+            if [ "$found" = false ]
+            then
+              rm "$thumb"
+            fi
+
+          done
+
+      - name: Create photos.json
+        run: |
+
+          find photos -type f \
+            \( \
+            -iname "*.jpg" -o \
+            -iname "*.jpeg" -o \
+            -iname "*.png" -o \
+            -iname "*.webp" \
+            \) \
+            | sed 's#photos/##' \
+            | sort -r \
+            | jq -R -s -c 'split("\n")[:-1]' \
+            > photos.json
+
+      - name: Commit updates
+        run: |
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add thumbs photos.json
+
+          git diff --cached --quiet || \
+          git commit -m "Update gallery"
+
           git push

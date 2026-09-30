@@ -4,201 +4,174 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>My Photo Album</title>
+<title>Skøyen Photo Album</title>
 
 <style>
 
-:root {
-    --card-radius: 12px;
-    --shadow: 0 4px 12px rgba(0,0,0,0.15);
+:root{
+    --radius:12px;
 }
 
-* {
-    box-sizing: border-box;
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f3f4f6;
 }
 
-body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f5f5f5;
+header{
+    background:#111827;
+    color:white;
+    text-align:center;
+    padding:25px;
 }
 
-header {
-    background: #1f2937;
-    color: white;
-    padding: 20px;
-    text-align: center;
+header h1{
+    margin:0;
 }
 
-header h1 {
-    margin: 0;
+#counter{
+    margin-top:10px;
+    color:#d1d5db;
 }
 
-#counter {
-    margin-top: 8px;
-    color: #d1d5db;
+.gallery{
+    padding:20px;
+    columns:4 250px;
+    column-gap:15px;
 }
 
-.gallery {
-    padding: 20px;
-    columns: 4 250px;
-    column-gap: 16px;
+.card{
+    break-inside:avoid;
+    background:white;
+    border-radius:var(--radius);
+    overflow:hidden;
+    margin-bottom:15px;
+    box-shadow:0 3px 10px rgba(0,0,0,.13);
 }
 
-.card {
-    break-inside: avoid;
-    margin-bottom: 16px;
-    background: white;
-    border-radius: var(--card-radius);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s ease;
+.card img{
+    width:100%;
+    display:block;
+    cursor:pointer;
 }
 
-.card:hover {
-    transform: translateY(-3px);
+.caption{
+    padding:10px;
+    text-align:center;
+    font-size:0.85rem;
 }
 
-.card img {
-    width: 100%;
-    display: block;
-    cursor: pointer;
+/* LIGHTBOX */
+
+#lightbox{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.95);
+    z-index:9999;
 }
 
-.caption {
-    padding: 10px;
-    text-align: center;
-    font-size: 0.9rem;
-    word-break: break-word;
+#lightbox img{
+    max-width:95vw;
+    max-height:90vh;
 }
 
-/* Lightbox */
-
-#lightbox {
-    position: fixed;
-    inset: 0;
-    display: none;
-    background: rgba(0,0,0,0.92);
-    z-index: 9999;
+.lightbox-wrapper{
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-.lightbox-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.control{
+    position:absolute;
+    color:white;
+    font-size:2rem;
+    cursor:pointer;
+    user-select:none;
 }
 
-#lightbox-img {
-    max-width: 95vw;
-    max-height: 90vh;
-    object-fit: contain;
+#prev{
+    top:50%;
+    left:20px;
 }
 
-/* Controls */
-
-.control {
-    position: absolute;
-    color: white;
-    font-size: 2rem;
-    cursor: pointer;
-    user-select: none;
-    padding: 10px;
+#next{
+    top:50%;
+    right:20px;
 }
 
-#prev {
-    left: 20px;
-    top: 50%;
+#close{
+    top:15px;
+    right:20px;
 }
 
-#next {
-    right: 20px;
-    top: 50%;
+#download{
+    position:absolute;
+    bottom:20px;
+    right:20px;
+
+    background:white;
+    color:black;
+
+    text-decoration:none;
+    border-radius:8px;
+
+    padding:10px 18px;
+
+    font-weight:bold;
 }
 
-#close {
-    top: 15px;
-    right: 20px;
-    font-size: 2rem;
+#filename{
+    position:absolute;
+    bottom:20px;
+    left:20px;
+    color:white;
 }
 
-/* Download button */
-
-#download {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-
-    background: white;
-    color: black;
-
-    padding: 12px 18px;
-    border-radius: 8px;
-
-    text-decoration: none;
-    font-weight: bold;
-}
-
-/* Filename */
-
-#filename {
-    position: absolute;
-    left: 20px;
-    bottom: 20px;
-    color: white;
-    font-size: 0.9rem;
-}
-
-/* Mobile */
-
-@media (max-width: 768px){
+@media(max-width:768px){
 
     .gallery{
-        columns:2 160px;
+        columns:2 180px;
     }
 
-    #prev,#next{
-        font-size:1.5rem;
-    }
 }
 
-@media (max-width: 480px){
+@media(max-width:480px){
 
     .gallery{
         columns:1;
     }
+
 }
 
 </style>
 </head>
+
 <body>
 
 <header>
-    <h1>📸 My Photo Album</h1>
-    <div id="counter">Loading...</div>
+    <h1>📸 Skøyen Photo Album</h1>
+    <div id="counter">Loading photos...</div>
 </header>
 
-<div id="gallery" class="gallery"></div>
-
-<!-- LIGHTBOX -->
+<div class="gallery" id="gallery"></div>
 
 <div id="lightbox">
 
     <div id="close" class="control">✕</div>
-
     <div id="prev" class="control">❮</div>
-
     <div id="next" class="control">❯</div>
 
-    <div class="lightbox-content">
+    <div class="lightbox-wrapper">
         <img id="lightbox-img">
     </div>
 
     <div id="filename"></div>
 
     <a id="download" download>
-        Download
+        Download original
     </a>
 
 </div>
@@ -208,41 +181,52 @@ header h1 {
 let photos = [];
 let currentIndex = 0;
 
-async function loadGallery() {
+async function loadGallery(){
 
-    const response = await fetch("photos.json");
+    const response = await fetch("./photos.json");
+
     photos = await response.json();
 
-    document.getElementById("counter").innerText =
+    document.getElementById("counter").textContent =
         `${photos.length} photos`;
 
     const gallery = document.getElementById("gallery");
 
     photos.forEach((file,index)=>{
 
-        const card = document.createElement("div");
+        const thumb =
+            file.replace(/\.[^/.]+$/, ".webp");
+
+        const card =
+            document.createElement("div");
+
         card.className = "card";
 
         card.innerHTML = `
             <img
-                src="photos/${file}"
+                src="thumbs/${thumb}"
                 loading="lazy"
                 alt="${file}">
             <div class="caption">${file}</div>
         `;
 
         card.querySelector("img")
-            .addEventListener("click",()=>openLightbox(index));
+            .addEventListener(
+                "click",
+                () => openLightbox(index)
+            );
 
         gallery.appendChild(card);
+
     });
+
 }
 
 function openLightbox(index){
 
     currentIndex = index;
 
-    const file = photos[currentIndex];
+    const file = photos[index];
 
     document.getElementById("lightbox-img").src =
         `photos/${file}`;
@@ -260,12 +244,6 @@ function openLightbox(index){
         "block";
 }
 
-function closeLightbox(){
-
-    document.getElementById("lightbox").style.display =
-        "none";
-}
-
 function nextImage(){
 
     currentIndex =
@@ -274,7 +252,7 @@ function nextImage(){
     openLightbox(currentIndex);
 }
 
-function prevImage(){
+function previousImage(){
 
     currentIndex =
         (currentIndex - 1 + photos.length)
@@ -283,31 +261,36 @@ function prevImage(){
     openLightbox(currentIndex);
 }
 
-document
-    .getElementById("next")
+document.getElementById("next")
     .addEventListener("click",nextImage);
 
-document
-    .getElementById("prev")
-    .addEventListener("click",prevImage);
+document.getElementById("prev")
+    .addEventListener("click",previousImage);
 
-document
-    .getElementById("close")
-    .addEventListener("click",closeLightbox);
+document.getElementById("close")
+    .addEventListener(
+        "click",
+        () =>
+        document.getElementById("lightbox")
+            .style.display="none"
+    );
 
 document.addEventListener("keydown",(e)=>{
 
-    if(document.getElementById("lightbox").style.display !== "block")
-        return;
+    if(
+        document.getElementById("lightbox")
+            .style.display !== "block"
+    ) return;
 
     if(e.key==="ArrowRight")
         nextImage();
 
     if(e.key==="ArrowLeft")
-        prevImage();
+        previousImage();
 
     if(e.key==="Escape")
-        closeLightbox();
+        document.getElementById("lightbox")
+            .style.display="none";
 });
 
 loadGallery();

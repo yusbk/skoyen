@@ -7,106 +7,310 @@
 <title>My Photo Album</title>
 
 <style>
-body{
-    font-family:Arial,sans-serif;
-    margin:0;
-    background:#f5f5f5;
+
+:root {
+    --card-radius: 12px;
+    --shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-header{
-    background:#222;
-    color:white;
-    text-align:center;
-    padding:20px;
+* {
+    box-sizing: border-box;
 }
 
-#gallery{
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-    gap:15px;
-    padding:20px;
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f5f5;
 }
 
-.photo{
-    background:white;
-    border-radius:10px;
-    overflow:hidden;
-    box-shadow:0 2px 8px rgba(0,0,0,.15);
+header {
+    background: #1f2937;
+    color: white;
+    padding: 20px;
+    text-align: center;
 }
 
-.photo img{
-    width:100%;
-    height:250px;
-    object-fit:cover;
-    cursor:pointer;
+header h1 {
+    margin: 0;
 }
 
-.caption{
-    padding:10px;
-    text-align:center;
+#counter {
+    margin-top: 8px;
+    color: #d1d5db;
 }
 
-#lightbox{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.9);
-    justify-content:center;
-    align-items:center;
-    z-index:999;
+.gallery {
+    padding: 20px;
+    columns: 4 250px;
+    column-gap: 16px;
 }
 
-#lightbox img{
-    max-width:95%;
-    max-height:95%;
+.card {
+    break-inside: avoid;
+    margin-bottom: 16px;
+    background: white;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease;
 }
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+.card img {
+    width: 100%;
+    display: block;
+    cursor: pointer;
+}
+
+.caption {
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+/* Lightbox */
+
+#lightbox {
+    position: fixed;
+    inset: 0;
+    display: none;
+    background: rgba(0,0,0,0.92);
+    z-index: 9999;
+}
+
+.lightbox-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#lightbox-img {
+    max-width: 95vw;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+/* Controls */
+
+.control {
+    position: absolute;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 10px;
+}
+
+#prev {
+    left: 20px;
+    top: 50%;
+}
+
+#next {
+    right: 20px;
+    top: 50%;
+}
+
+#close {
+    top: 15px;
+    right: 20px;
+    font-size: 2rem;
+}
+
+/* Download button */
+
+#download {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+
+    background: white;
+    color: black;
+
+    padding: 12px 18px;
+    border-radius: 8px;
+
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Filename */
+
+#filename {
+    position: absolute;
+    left: 20px;
+    bottom: 20px;
+    color: white;
+    font-size: 0.9rem;
+}
+
+/* Mobile */
+
+@media (max-width: 768px){
+
+    .gallery{
+        columns:2 160px;
+    }
+
+    #prev,#next{
+        font-size:1.5rem;
+    }
+}
+
+@media (max-width: 480px){
+
+    .gallery{
+        columns:1;
+    }
+}
+
 </style>
 </head>
-
 <body>
 
 <header>
-<h1>Photo Album</h1>
-<p>Automatically updated from photos folder</p>
+    <h1>📸 My Photo Album</h1>
+    <div id="counter">Loading...</div>
 </header>
 
-<div id="gallery"></div>
+<div id="gallery" class="gallery"></div>
 
-<div id="lightbox" onclick="this.style.display='none'">
-    <img id="lightboxImg">
+<!-- LIGHTBOX -->
+
+<div id="lightbox">
+
+    <div id="close" class="control">✕</div>
+
+    <div id="prev" class="control">❮</div>
+
+    <div id="next" class="control">❯</div>
+
+    <div class="lightbox-content">
+        <img id="lightbox-img">
+    </div>
+
+    <div id="filename"></div>
+
+    <a id="download" download>
+        Download
+    </a>
+
 </div>
 
 <script>
 
-async function loadPhotos(){
+let photos = [];
+let currentIndex = 0;
+
+async function loadGallery() {
 
     const response = await fetch("photos.json");
-    const photos = await response.json();
+    photos = await response.json();
+
+    document.getElementById("counter").innerText =
+        `${photos.length} photos`;
 
     const gallery = document.getElementById("gallery");
 
-    photos.forEach(file => {
+    photos.forEach((file,index)=>{
 
         const card = document.createElement("div");
-        card.className = "photo";
+        card.className = "card";
 
         card.innerHTML = `
-            <img src="photos/${file}" alt="${file}">
+            <img
+                src="photos/${file}"
+                loading="lazy"
+                alt="${file}">
             <div class="caption">${file}</div>
         `;
 
-        card.querySelector("img").onclick = () => {
-
-            document.getElementById("lightbox").style.display = "flex";
-            document.getElementById("lightboxImg").src =
-                `photos/${file}`;
-        };
+        card.querySelector("img")
+            .addEventListener("click",()=>openLightbox(index));
 
         gallery.appendChild(card);
     });
 }
 
-loadPhotos();
+function openLightbox(index){
+
+    currentIndex = index;
+
+    const file = photos[currentIndex];
+
+    document.getElementById("lightbox-img").src =
+        `photos/${file}`;
+
+    document.getElementById("filename").textContent =
+        file;
+
+    document.getElementById("download").href =
+        `photos/${file}`;
+
+    document.getElementById("download").download =
+        file;
+
+    document.getElementById("lightbox").style.display =
+        "block";
+}
+
+function closeLightbox(){
+
+    document.getElementById("lightbox").style.display =
+        "none";
+}
+
+function nextImage(){
+
+    currentIndex =
+        (currentIndex + 1) % photos.length;
+
+    openLightbox(currentIndex);
+}
+
+function prevImage(){
+
+    currentIndex =
+        (currentIndex - 1 + photos.length)
+        % photos.length;
+
+    openLightbox(currentIndex);
+}
+
+document
+    .getElementById("next")
+    .addEventListener("click",nextImage);
+
+document
+    .getElementById("prev")
+    .addEventListener("click",prevImage);
+
+document
+    .getElementById("close")
+    .addEventListener("click",closeLightbox);
+
+document.addEventListener("keydown",(e)=>{
+
+    if(document.getElementById("lightbox").style.display !== "block")
+        return;
+
+    if(e.key==="ArrowRight")
+        nextImage();
+
+    if(e.key==="ArrowLeft")
+        prevImage();
+
+    if(e.key==="Escape")
+        closeLightbox();
+});
+
+loadGallery();
 
 </script>
 
